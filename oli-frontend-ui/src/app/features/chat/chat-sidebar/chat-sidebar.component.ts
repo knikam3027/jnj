@@ -34,12 +34,18 @@ export class ChatSidebarComponent implements OnInit {
     this.newChat.emit();
   }
 
-  onSelectSession(sessionId: string): void {
-    this.chatService.selectSession(sessionId);
-    this.router.navigate(['/chat', sessionId]);
+  onSelectSession(sessionId: number): void {
+    this.chatService.selectSession(sessionId).subscribe({
+      next: () => {
+        this.router.navigate(['/chat', sessionId]);
+      },
+      error: (err) => {
+        console.error('Error loading session:', err);
+      }
+    });
   }
 
-  isInTodaySessions(sessionId: string): boolean {
+  isInTodaySessions(sessionId: number): boolean {
     return this.todaySessions().some(s => s.id === sessionId);
   }
 

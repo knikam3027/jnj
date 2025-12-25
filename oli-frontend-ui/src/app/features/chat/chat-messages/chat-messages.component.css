@@ -1,1 +1,45 @@
 /* Chat messages styles */
+
+/* Container with limited height to show 2-3 messages */
+.flex-1 {
+  max-height: calc(100vh - 250px);
+  overflow-y: auto !important;
+}
+
+/* Smooth scrolling */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar - always visible */
+::-webkit-scrollbar {
+  width: 10px;
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 5px;
+  margin: 4px 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 5px;
+  border: 2px solid #e5e7eb;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Typing animation cursor effect */
+.typing-cursor::after {
+  content: '|';
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

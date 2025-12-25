@@ -31,12 +31,17 @@ export class AuthService {
     // Mock mode for development
     if (environment.useMockData) {
       console.log('Using mock mode');
-      const user = mockData.users.find(u => u.email === request.email) || mockData.users[0];
+      const mockUser = mockData.users.find(u => u.email === request.email) || mockData.users[0];
+      const user = {
+        ...mockUser,
+        id: 1 // Convert to number for backend compatibility
+      };
       console.log('Found user:', user);
       
       const mockResponse: AuthResponse = {
         user: user as User,
-        token: 'mock-token-' + Date.now()
+        accessToken: 'mock-token-' + Date.now(),
+        refreshToken: 'mock-refresh-token-' + Date.now()
       };
       
       return of(mockResponse).pipe(
@@ -66,7 +71,7 @@ export class AuthService {
     // In mock mode, use regular login
     if (environment.useMockData) {
       console.log('Using mock data, calling login()');
-      this.login({ email }).subscribe({
+      this.login({ email, password: 'mock-password' }).subscribe({
         next: (response) => {
           console.log('Login successful:', response);
         },
@@ -89,7 +94,8 @@ export class AuthService {
   }
 
   private setSession(authResponse: AuthResponse): void {
-    localStorage.setItem('token', authResponse.token);
+    localStorage.setItem('token', authResponse.accessToken);
+    localStorage.setItem('refreshToken', authResponse.refreshToken);
     localStorage.setItem('user', JSON.stringify(authResponse.user));
     this.currentUserSubject.next(authResponse.user);
   }

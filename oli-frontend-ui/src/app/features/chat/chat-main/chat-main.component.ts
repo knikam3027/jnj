@@ -41,42 +41,36 @@ export class ChatMainComponent implements OnInit {
   }
 
   private loadInitialData(): void {
-    this.chatService.loadChatHistory().subscribe();
+    // Subscribe to session changes first
     this.chatService.currentSession$.subscribe(session => {
       if (session) {
-        this.messages.set(session.messages);
+        this.messages.set(session.messages || []);
       } else {
         this.messages.set([]);
       }
     });
+    
+    // Then load chat history
+    this.chatService.loadChatHistory().subscribe();
   }
 
   onSendMessage(message: string): void {
     if (!message.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: message,
-      sender: 'user',
-      timestamp: new Date(),
-      isEditable: true
-    };
-
-    this.messages.update(msgs => [...msgs, userMessage]);
     this.isLoading.set(true);
 
     this.chatService.sendMessage({ message }).subscribe({
       next: (response) => {
-        this.messages.update(msgs => [...msgs, response.message]);
         this.isLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error sending message:', err);
         this.isLoading.set(false);
       }
     });
   }
 
-  onEditMessage(event: {id: string, content: string}): void {
+  onEditMessage(event: {id: number, content: string}): void {
     // Remove messages after the edited one
     const editIndex = this.messages().findIndex(m => m.id === event.id);
     if (editIndex !== -1) {

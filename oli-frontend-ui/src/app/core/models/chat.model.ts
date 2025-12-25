@@ -1,5 +1,5 @@
 export interface Message {
-  id: string;
+  id: number;
   content: string;
   sender: 'user' | 'bot';
   timestamp: Date;
@@ -7,7 +7,7 @@ export interface Message {
 }
 
 export interface ChatSession {
-  id: string;
+  id: number;
   title: string;
   messages: Message[];
   createdAt: Date;
@@ -16,10 +16,10 @@ export interface ChatSession {
 
 export interface ChatRequest {
   message: string;
-  sessionId?: string;
+  sessionId?: number;
 }
 
 export interface ChatResponse {
   message: Message;
-  sessionId: string;
+  sessionId: number;
 }

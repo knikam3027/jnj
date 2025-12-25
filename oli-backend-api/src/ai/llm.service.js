@@ -9,10 +9,16 @@
  * - Supports multiple LLM providers (OpenAI, Azure OpenAI, etc.)
  */
 
+const OpenAI = require('openai');
 const messageRepository = require('../repositories/message.repository');
 const ragService = require('./rag.service');
 const guardrailsService = require('./guardrails.service');
 const queryRephraseService = require('./query-rephrase.service');
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
+});
 
 /**
  * Generate AI response for user message
@@ -76,22 +82,53 @@ const buildConversationHistory = async (sessionId, maxMessages = 10) => {
 };
 
 /**
- * Call the LLM API (placeholder for actual implementation)
- * In production, integrate with OpenAI, Azure OpenAI, Anthropic, etc.
+ * Call the LLM API
+ * Integrates with OpenAI API
  */
 const callLLM = async ({ userMessage, context, history }) => {
-  // TODO: Integrate with actual LLM API
-  // Example integrations:
-  // - OpenAI GPT-4
-  // - Azure OpenAI
-  // - Anthropic Claude
-  // - Google Gemini
-  // - Local LLM (Ollama, etc.)
+  try {
+    const systemPrompt = buildSystemPrompt(context);
+    
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY && !process.env.AZURE_OPENAI_API_KEY) {
+      console.warn('⚠️  No OpenAI API key found. Returning mock response.');
+      return getMockResponse(userMessage);
+    }
 
-  const systemPrompt = buildSystemPrompt(context);
-  
-  // For now, return a mock response
-  // In production, replace with actual API call
+    // Build messages array for OpenAI
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...history,
+      { role: 'user', content: userMessage }
+    ];
+
+    console.log('🤖 Calling OpenAI API...');
+    
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
+      messages: messages,
+      temperature: parseFloat(process.env.AI_TEMPERATURE || '0.7'),
+      max_tokens: parseInt(process.env.AI_MAX_TOKENS || '1000', 10)
+    });
+
+    const response = completion.choices[0].message.content;
+    console.log('✅ OpenAI response received');
+    
+    return response;
+
+  } catch (error) {
+    console.error('❌ OpenAI API Error:', error.message);
+    
+    // Fallback to mock response on error
+    return getMockResponse(userMessage);
+  }
+};
+
+/**
+ * Get mock response (fallback)
+ */
+const getMockResponse = (userMessage) => {
   const responses = [
     "I've analyzed the data and found some interesting insights. Would you like me to elaborate on any specific aspect?",
     "Based on the available information, here's what I found: The metrics show a positive correlation with previous quarters.",
@@ -101,31 +138,7 @@ const callLLM = async ({ userMessage, context, history }) => {
     `Regarding "${userMessage}", I can provide detailed insights based on the context available.`
   ];
 
-  const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-  
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  return randomResponse;
-
-  /* Production implementation example:
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...history,
-    { role: 'user', content: userMessage }
-  ];
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4',
-    messages: messages,
-    temperature: 0.7,
-    max_tokens: 1000
-  });
-
-  return completion.choices[0].message.content;
-  */
+  return responses[Math.floor(Math.random() * responses.length)];
 };
 
 /**

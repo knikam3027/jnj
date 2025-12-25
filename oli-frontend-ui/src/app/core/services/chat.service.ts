@@ -32,17 +32,46 @@ export class ChatService {
       
       return of(sessions).pipe(
         delay(300),
-        tap(sessions => this.chatSessionsSubject.next(sessions))
+        tap(sessions => {
+          this.chatSessionsSubject.next(sessions);
+          // Set first session as current if available
+          if (sessions.length > 0 && !this.currentSessionSubject.value) {
+            this.currentSessionSubject.next(sessions[0]);
+          }
+        })
       );
     }
 
     return this.http.get<ChatSession[]>(`${environment.apiUrl}/chat/history`)
       .pipe(
-        tap(sessions => this.chatSessionsSubject.next(sessions))
+        tap(sessions => {
+          this.chatSessionsSubject.next(sessions);
+          // Set first session as current if available
+          if (sessions.length > 0 && !this.currentSessionSubject.value) {
+            this.currentSessionSubject.next(sessions[0]);
+          }
+        })
       );
   }
 
   sendMessage(request: ChatRequest): Observable<ChatResponse> {
+    // Add user message to current session immediately
+    const userMessage: Message = {
+      id: Date.now(),
+      content: request.message,
+      sender: 'user',
+      timestamp: new Date(),
+      isEditable: true
+    };
+
+    // Update current session with user message
+    const current = this.currentSessionSubject.value;
+    if (current) {
+      const updatedMessages = [...current.messages, userMessage];
+      const updatedSession = { ...current, messages: updatedMessages };
+      this.currentSessionSubject.next(updatedSession);
+    }
+
     // Mock mode for development
     if (environment.useMockData) {
       const randomResponse = mockData.mockResponses[
@@ -50,7 +79,7 @@ export class ChatService {
       ];
       
       const botMessage: Message = {
-        id: 'msg-' + Date.now(),
+        id: Date.now(),
         content: randomResponse,
         sender: 'bot',
         timestamp: new Date()
@@ -58,7 +87,7 @@ export class ChatService {
 
       const mockResponse: ChatResponse = {
         message: botMessage,
-        sessionId: request.sessionId || 'session-' + Date.now()
+        sessionId: request.sessionId || Date.now()
       };
 
       return of(mockResponse).pipe(
@@ -74,6 +103,7 @@ export class ChatService {
       .pipe(
         tap(response => {
           this.updateCurrentSession(response);
+          this.updateSessionsList(request.message, response);
         })
       );
   }
@@ -82,18 +112,52 @@ export class ChatService {
     this.currentSessionSubject.next(null);
   }
 
-  selectSession(sessionId: string): void {
+  selectSession(sessionId: number): Observable<ChatSession | null> {
+    // First try to find in local cache
     const session = this.chatSessionsSubject.value.find(s => s.id === sessionId);
-    if (session) {
+    
+    if (session && session.messages && session.messages.length > 0) {
+      // If we already have messages, use them directly
       this.currentSessionSubject.next(session);
+      return of(session);
     }
+
+    // If no messages or not in cache, fetch from backend
+    if (environment.useMockData) {
+      if (session) {
+        this.currentSessionSubject.next(session);
+        return of(session);
+      }
+      return of(null);
+    }
+
+    // Fetch session messages from backend
+    return this.http.get<ChatSession>(`${environment.apiUrl}/chat/session/${sessionId}`)
+      .pipe(
+        tap(fullSession => {
+          // Update the session in the list with full messages
+          const sessions = this.chatSessionsSubject.value.map(s => 
+            s.id === sessionId ? fullSession : s
+          );
+          this.chatSessionsSubject.next(sessions);
+          this.currentSessionSubject.next(fullSession);
+        })
+      );
   }
 
   private updateCurrentSession(response: ChatResponse): void {
     const current = this.currentSessionSubject.value;
     if (current) {
-      current.messages.push(response.message);
-      this.currentSessionSubject.next({ ...current });
+      // Add message to existing session
+      const updatedMessages = [...current.messages, response.message];
+      const updatedSession = { ...current, messages: updatedMessages };
+      this.currentSessionSubject.next(updatedSession);
+      
+      // Update in sessions list too
+      const sessions = this.chatSessionsSubject.value.map(s => 
+        s.id === current.id ? updatedSession : s
+      );
+      this.chatSessionsSubject.next(sessions);
     }
   }
 
@@ -101,11 +165,11 @@ export class ChatService {
     const current = this.currentSessionSubject.value;
     
     if (!current) {
-      // Create new session
+      // Create new session with the bot response message
       const newSession: ChatSession = {
         id: response.sessionId,
         title: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : ''),
-        messages: [],
+        messages: [response.message],
         createdAt: new Date(),
         updatedAt: new Date()
       };
