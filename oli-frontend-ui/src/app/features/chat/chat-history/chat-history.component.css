@@ -1,0 +1,7 @@
+.chat-history-container {
+  max-height: 100vh;
+}
+
+.overflow-y-auto {
+  max-height: calc(100vh - 4rem);
+}

@@ -1,0 +1,160 @@
+<div class="chat-settings-container p-6 bg-white max-w-2xl mx-auto">
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Chat Settings</h2>
+    <p class="text-sm text-gray-600 mt-1">Customize your chat experience</p>
+  </div>
+
+  <form (ngSubmit)="saveSettings()" class="space-y-6">
+    <!-- Appearance -->
+    <div class="settings-section">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Appearance</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Theme</label>
+          <select
+            [(ngModel)]="settings.theme"
+            name="theme"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="auto">Auto (System)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Font Size</label>
+          <select
+            [(ngModel)]="settings.fontSize"
+            name="fontSize"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Settings -->
+    <div class="settings-section">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">AI Settings</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">AI Model</label>
+          <select
+            [(ngModel)]="settings.aiModel"
+            name="aiModel"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            @for (model of availableModels; track model.id) {
+              <option [value]="model.id">{{ model.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Temperature: {{ settings.temperature }}
+          </label>
+          <input
+            type="range"
+            [(ngModel)]="settings.temperature"
+            name="temperature"
+            min="0"
+            max="2"
+            step="0.1"
+            class="w-full"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Lower values = more focused, Higher values = more creative
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preferences -->
+    <div class="settings-section">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Preferences</h3>
+      
+      <div class="space-y-3">
+        <label class="flex items-center">
+          <input
+            type="checkbox"
+            [(ngModel)]="settings.notifications"
+            name="notifications"
+            class="rounded text-indigo-600 focus:ring-indigo-500"
+          />
+          <span class="ml-2 text-sm text-gray-700">Enable notifications</span>
+        </label>
+
+        <label class="flex items-center">
+          <input
+            type="checkbox"
+            [(ngModel)]="settings.soundEffects"
+            name="soundEffects"
+            class="rounded text-indigo-600 focus:ring-indigo-500"
+          />
+          <span class="ml-2 text-sm text-gray-700">Sound effects</span>
+        </label>
+
+        <label class="flex items-center">
+          <input
+            type="checkbox"
+            [(ngModel)]="settings.autoSave"
+            name="autoSave"
+            class="rounded text-indigo-600 focus:ring-indigo-500"
+          />
+          <span class="ml-2 text-sm text-gray-700">Auto-save conversations</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Message History -->
+    <div class="settings-section">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Message History</h3>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Maximum messages to keep: {{ settings.messageHistory }}
+        </label>
+        <input
+          type="range"
+          [(ngModel)]="settings.messageHistory"
+          name="messageHistory"
+          min="50"
+          max="1000"
+          step="50"
+          class="w-full"
+        />
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-3 pt-4 border-t border-gray-200">
+      <button
+        type="submit"
+        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+      >
+        Save Settings
+      </button>
+      <button
+        type="button"
+        (click)="resetSettings()"
+        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+      >
+        Reset to Defaults
+      </button>
+      <button
+        type="button"
+        (click)="exportSettings()"
+        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+      >
+        Export Settings
+      </button>
+    </div>
+  </form>
+</div>

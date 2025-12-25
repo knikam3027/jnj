@@ -1,0 +1,57 @@
+<div class="chat-session-container p-4 bg-gray-50">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">Sessions</h3>
+    <button
+      (click)="createNewSession()"
+      class="px-3 py-1 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+      title="New Session"
+    >
+      <i class="fas fa-plus mr-1"></i>
+      New
+    </button>
+  </div>
+
+  <div class="space-y-2">
+    @if (sessions.length === 0) {
+      <p class="text-sm text-gray-500 text-center py-4">No sessions available</p>
+    } @else {
+      @for (session of sessions; track session.id) {
+        <div
+          class="p-3 bg-white rounded-lg border cursor-pointer transition-all"
+          [class.border-indigo-500]="session.isActive"
+          [class.border-gray-200]="!session.isActive"
+          [class.shadow-sm]="session.isActive"
+          (click)="switchSession(session)"
+        >
+          <div class="flex justify-between items-start">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-medium text-gray-900 truncate">
+                  {{ session.name }}
+                </h4>
+                @if (session.isActive) {
+                  <span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
+                    Active
+                  </span>
+                }
+              </div>
+              <p class="text-xs text-gray-500 mt-1">
+                {{ session.messageCount }} messages
+              </p>
+              <p class="text-xs text-gray-400 mt-1">
+                Last active: {{ session.lastActive | date:'short' }}
+              </p>
+            </div>
+            <button
+              (click)="deleteSession(session.id); $event.stopPropagation()"
+              class="text-gray-400 hover:text-red-600 transition-colors"
+              title="Delete session"
+            >
+              <i class="fas fa-trash text-xs"></i>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
