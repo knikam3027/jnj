@@ -11,7 +11,10 @@ import { Output, EventEmitter } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './chat-sidebar.component.html',
-  styleUrls: ['./chat-sidebar.component.css']
+  styleUrls: ['./chat-sidebar.component.css'],
+  host: {
+    'class': 'h-full block'
+  }
 })
 export class ChatSidebarComponent implements OnInit {
   private chatService = inject(ChatService);

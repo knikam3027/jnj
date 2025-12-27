@@ -8,7 +8,10 @@ import { Message } from '@core/models/chat.model';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './chat-messages.component.html',
-  styleUrls: ['./chat-messages.component.css']
+  styleUrls: ['./chat-messages.component.css'],
+  host: {
+    'class': 'flex flex-col flex-1 overflow-hidden'
+  }
 })
 export class ChatMessagesComponent implements AfterViewChecked, OnChanges {
   @Input() messages: Message[] = [];
@@ -21,18 +24,43 @@ export class ChatMessagesComponent implements AfterViewChecked, OnChanges {
   displayedMessages: Map<number, string> = new Map();
   typingIntervals: Map<number, any> = new Map();
   private shouldScrollToBottom = false;
+  private previousMessageCount = 0;
+  private isInitialLoad = true;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['messages'] && this.messages) {
-      this.messages.forEach(message => {
-        if (message.sender === 'bot' && !this.displayedMessages.has(message.id)) {
-          this.shouldScrollToBottom = true;
-          this.startTypingEffect(message);
-        } else if (message.sender === 'user' && !this.displayedMessages.has(message.id)) {
+      const currentCount = this.messages.length;
+      
+      // If this is initial load or session change (replacing all messages)
+      if (this.isInitialLoad || currentCount < this.previousMessageCount) {
+        // Show all messages immediately without typing effect
+        this.messages.forEach(message => {
           this.displayedMessages.set(message.id, message.content);
-          this.shouldScrollToBottom = true;
-        }
-      });
+        });
+        this.isInitialLoad = false;
+        this.shouldScrollToBottom = true;
+      } else {
+        // Only apply typing effect to newly added messages
+        this.messages.slice(this.previousMessageCount).forEach(message => {
+          if (message.sender === 'bot' && !this.displayedMessages.has(message.id)) {
+            this.shouldScrollToBottom = true;
+            this.startTypingEffect(message);
+          } else if (message.sender === 'user' && !this.displayedMessages.has(message.id)) {
+            this.displayedMessages.set(message.id, message.content);
+            this.shouldScrollToBottom = true;
+          }
+        });
+      }
+      
+      this.previousMessageCount = currentCount;
+    }
+    
+    // Detect when messages array is replaced (switching sessions)
+    if (changes['messages'] && changes['messages'].previousValue && 
+        changes['messages'].currentValue.length > 0 &&
+        changes['messages'].previousValue.length > 0 &&
+        changes['messages'].currentValue[0].id !== changes['messages'].previousValue[0].id) {
+      this.isInitialLoad = true;
     }
   }
 
