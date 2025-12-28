@@ -65,11 +65,21 @@ export class ChatService {
     };
 
     // Update current session with user message
-    const current = this.currentSessionSubject.value;
+    let current = this.currentSessionSubject.value;
     if (current) {
       const updatedMessages = [...current.messages, userMessage];
       const updatedSession = { ...current, messages: updatedMessages };
       this.currentSessionSubject.next(updatedSession);
+    } else {
+      // Create temporary session for immediate feedback
+      const tempSession: ChatSession = {
+        id: 0, // Temporary ID
+        title: 'New Chat',
+        messages: [userMessage],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.currentSessionSubject.next(tempSession);
     }
 
     // Mock mode for development
@@ -150,7 +160,14 @@ export class ChatService {
     if (current) {
       // Add message to existing session
       const updatedMessages = [...current.messages, response.message];
-      const updatedSession = { ...current, messages: updatedMessages };
+      
+      // Update ID if it was temporary
+      const updatedSession = { 
+        ...current, 
+        id: response.sessionId,
+        messages: updatedMessages 
+      };
+      
       this.currentSessionSubject.next(updatedSession);
       
       // Update in sessions list too
@@ -164,19 +181,19 @@ export class ChatService {
   private updateSessionsList(userMessage: string, response: ChatResponse): void {
     const current = this.currentSessionSubject.value;
     
-    if (!current) {
-      // Create new session with the bot response message
-      const newSession: ChatSession = {
-        id: response.sessionId,
-        title: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : ''),
-        messages: [response.message],
-        createdAt: new Date(),
-        updatedAt: new Date()
+    // Check if this session is already in the list
+    const exists = this.chatSessionsSubject.value.some(s => s.id === response.sessionId);
+    
+    if (!exists && current) {
+      // It's a new session (was temp, now real). Add to list.
+      const sessionWithTitle = {
+        ...current,
+        title: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '')
       };
       
-      const sessions = [newSession, ...this.chatSessionsSubject.value];
+      const sessions = [sessionWithTitle, ...this.chatSessionsSubject.value];
       this.chatSessionsSubject.next(sessions);
-      this.currentSessionSubject.next(newSession);
+      this.currentSessionSubject.next(sessionWithTitle);
     }
   }
 
