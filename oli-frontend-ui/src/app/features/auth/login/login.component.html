@@ -1,63 +1,31 @@
-<div class="min-h-screen bg-primary flex items-center justify-center p-4">
-  <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md relative">
-    <!-- Close Button -->
-    <button 
-      (click)="onClose()"
-      class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-      type="button">
-      ✕
-    </button>
+<div class="jj-page">
+  <div class="jj-panel">
+    <button class="close" (click)="onClose()" type="button">✕</button>
 
-    <!-- Logo/Title -->
-    <div class="mb-8 text-center">
-      <h1 class="text-2xl font-bold text-gray-800">Oli</h1>
-      <p class="text-sm text-gray-600">Operational Learning Intelligence</p>
+    <div class="jj-logo">Johnson&Johnson</div>
+
+    <p class="subtitle">For J&J employees: please log in using SSO.</p>
+
+    <button class="sso" type="button">Sign in via SSO</button>
+
+    <div class="divider"><span></span><em>or</em><span></span></div>
+
+    <label class="field-label">Email:</label>
+    <input id="email" type="email" [(ngModel)]="email" placeholder="you@example.com" class="text-input" [disabled]="isLoading" />
+
+    <label class="field-label">Password:</label>
+    <input id="password" type="password" [(ngModel)]="password" placeholder="Enter your password" class="text-input" [disabled]="isLoading" (keyup.enter)="onSignIn()" />
+
+    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+    <div class="actions">
+      <button class="signin" (click)="onSignIn()" [disabled]="isLoading || !email || !password">{{ isLoading ? 'Signing in...' : 'Sign in' }}</button>
     </div>
 
-    <!-- Email Input -->
-    <div class="mb-4">
-      <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-        Email
-      </label>
-      <input
-        id="email"
-        type="email"
-        [(ngModel)]="email"
-        placeholder="test2@example.com"
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-        [disabled]="isLoading"
-      />
+    <div class="links">
+      <a href="#">Lost your password?</a>
+      <a href="#">Request for access</a>
+      <a href="#">Johnson & Johnson Terms of Service</a>
     </div>
-
-    <!-- Password Input -->
-    <div class="mb-4">
-      <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-        Password
-      </label>
-      <input
-        id="password"
-        type="password"
-        [(ngModel)]="password"
-        placeholder="Enter your password"
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-        [disabled]="isLoading"
-        (keyup.enter)="onSignIn()"
-      />
-    </div>
-
-    <!-- Error Message -->
-    @if (errorMessage) {
-      <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-        {{ errorMessage }}
-      </div>
-    }
-
-    <!-- Sign In Button -->
-    <button
-      (click)="onSignIn()"
-      [disabled]="!email || !password || isLoading"
-      class="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-      {{ isLoading ? 'Signing in...' : 'Sign in' }}
-    </button>
   </div>
 </div>

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, of, delay } from 'rxjs';
+import { BehaviorSubject, Observable, tap, of, delay, map, catchError, throwError } from 'rxjs';
 import { environment } from '@environments/environment';
 import { ChatSession, ChatRequest, ChatResponse, Message } from '../models/chat.model';
 import mockData from '../data/mock-data.json';
@@ -114,6 +114,68 @@ export class ChatService {
         tap(response => {
           this.updateCurrentSession(response);
           this.updateSessionsList(request.message, response);
+        })
+      );
+    }
+
+    // If environment is configured to use Python provider, call Python chat runtime directly from frontend
+    if (environment.aiProvider === 'python') {
+      const current = this.currentSessionSubject.value;
+      const requestId = request.sessionId || Date.now();
+      const payload = {
+        inputs: apiRequest.message,
+        parameters: {
+          request_id: requestId,
+          Conversation_History: true,
+          chat_history: current ? current.messages : []
+        }
+      };
+
+      return this.http.post<any>(environment.pythonChatUrl, payload).pipe(
+        map((res: any) => {
+          // Python FastAPI returns { body: '<string>' } (we use that), or { reply/message/response }
+          let text = '';
+          if (res && typeof res === 'object') {
+            if (res.body) text = res.body;
+            else text = res.reply || res.message || res.response || '';
+          } else if (typeof res === 'string') {
+            text = res;
+          }
+
+          // Try to unquote JSON strings
+          try {
+            const parsed = JSON.parse(text);
+            if (typeof parsed === 'string') text = parsed;
+            else if (parsed && (parsed.reply || parsed.message || parsed.response)) {
+              text = parsed.reply || parsed.message || parsed.response;
+            } else {
+              text = JSON.stringify(parsed);
+            }
+          } catch (e) {
+            // not JSON, leave text as-is
+          }
+
+          const botMessage: Message = {
+            id: Date.now(),
+            content: text,
+            sender: 'bot',
+            timestamp: new Date()
+          };
+
+          const chatResponse: ChatResponse = {
+            message: botMessage,
+            sessionId: request.sessionId || Date.now()
+          };
+
+          // Update UI state
+          this.updateCurrentSession(chatResponse);
+          this.updateSessionsList(request.message, chatResponse);
+
+          return chatResponse;
+        }),
+        catchError(err => {
+          console.error('Error calling Python chat runtime:', err);
+          return throwError(() => err);
         })
       );
     }
