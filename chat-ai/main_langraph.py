@@ -22,7 +22,7 @@ from sqlalchemy import create_engine
 from langchain.chat_models import init_chat_model
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 from sqlalchemy.orm import sessionmaker, Session
 
 os.environ["CURL_CA_BUNDLE"] = ""
@@ -419,10 +419,10 @@ def response_generation_agent(rephrased_query: str) -> str:
                         dialect=db.dialect,
                         top_k=5,
                     )
-    agent = create_agent(
+    agent = create_react_agent(
                             llm,
                             tools,
-                            system_prompt=system_prompt,
+                            prompt=system_prompt,
                         )
     for step in agent.stream({"messages": [{"role": "user", "content": rephrased_query}]},stream_mode="values",):
         resp.append(step["messages"][-1])

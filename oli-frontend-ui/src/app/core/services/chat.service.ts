@@ -55,15 +55,6 @@ export class ChatService {
   }
 
   sendMessage(request: ChatRequest): Observable<ChatResponse> {
-    // Get selected language
-    const language = localStorage.getItem('app_language') || 'English';
-    
-    // Prepare message for API (with instruction)
-    const apiRequest = {
-      ...request,
-      message: `[System: Please respond in ${language}] ${request.message}`
-    };
-
     // Add user message to current session immediately
     const userMessage: Message = {
       id: Date.now(),
@@ -123,7 +114,7 @@ export class ChatService {
       const current = this.currentSessionSubject.value;
       const requestId = request.sessionId || Date.now();
       const payload = {
-        inputs: apiRequest.message,
+        inputs: request.message,
         parameters: {
           request_id: requestId,
           Conversation_History: true,
@@ -180,7 +171,7 @@ export class ChatService {
       );
     }
 
-    return this.http.post<ChatResponse>(`${environment.apiUrl}/chat/message`, apiRequest)
+    return this.http.post<ChatResponse>(`${environment.apiUrl}/chat/message`, request)
       .pipe(
         tap(response => {
           this.updateCurrentSession(response);

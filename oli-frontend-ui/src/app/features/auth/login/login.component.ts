@@ -58,4 +58,19 @@ export class LoginComponent {
   onClose(): void {
     this.email = '';
   }
+
+  onSSO(): void {
+    // Use demo SSO email for development/demo flows (temporary)
+    const demoEmail = 'john@jnj.com';
+    const demoPassword = 'Jnhn@123';
+    this.email = demoEmail;
+    this.password = demoPassword;
+    this.isLoading = true;
+    try {
+      this.authService.loginWithSSO(demoEmail);
+    } finally {
+      // loginWithSSO will navigate; ensure loading flag reset after a short delay if mock
+      setTimeout(() => { this.isLoading = false; }, 700);
+    }
+  }
 }

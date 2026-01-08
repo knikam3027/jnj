@@ -63,7 +63,8 @@ const generateResponse = async ({ message, sessionId, userId }) => {
     const llmResponse = await callLLM({
       userMessage: message,
       context: contextualInfo,
-      history: conversationHistory
+      history: conversationHistory,
+      sessionId
     });
 
     // Step 6: Apply output guardrails
@@ -103,7 +104,7 @@ const buildConversationHistory = async (sessionId, maxMessages = 10) => {
  * Call the LLM API
  * Integrates with OpenAI API
  */
-const callLLM = async ({ userMessage, context, history }) => {
+const callLLM = async ({ userMessage, context, history, sessionId }) => {
   try {
     const systemPrompt = buildSystemPrompt(context);
 
@@ -198,13 +199,38 @@ const callLLM = async ({ userMessage, context, history }) => {
  * Get mock response (fallback)
  */
 const getMockResponse = (userMessage) => {
+  // Check for common questions and provide sensible mock answers
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Capital cities
+  if (lowerMessage.includes('capital') && lowerMessage.includes('india')) {
+    return "The capital of India is New Delhi. It serves as the seat of all three branches of the Government of India.";
+  }
+  if (lowerMessage.includes('capital') && lowerMessage.includes('usa') || lowerMessage.includes('united states') || lowerMessage.includes('america')) {
+    return "The capital of the United States is Washington, D.C.";
+  }
+  
+  // Greetings
+  if (lowerMessage.match(/^(hi|hello|hey|good morning|good afternoon|good evening)/)) {
+    return "Hello! I'm OLI, your AI assistant. How can I help you today?";
+  }
+  
+  // How are you
+  if (lowerMessage.includes('how are you')) {
+    return "I'm doing great, thank you for asking! I'm here to help you with any questions you might have.";
+  }
+  
+  // What is your name
+  if (lowerMessage.includes('your name') || lowerMessage.includes('who are you')) {
+    return "I'm OLI (Operational Learning Intelligence), an AI assistant designed to help you with your questions and tasks.";
+  }
+  
+  // Default responses
   const responses = [
-    "I've analyzed the data and found some interesting insights. Would you like me to elaborate on any specific aspect?",
-    "Based on the available information, here's what I found: The metrics show a positive correlation with previous quarters.",
-    "That's a great question! Let me pull the relevant data for you. The trends indicate several key factors to consider.",
-    "According to our latest analysis, the data reveals important patterns that could help inform your decision.",
-    "I can help you with that. The information suggests there are multiple dimensions to explore here.",
-    `Regarding "${userMessage}", I can provide detailed insights based on the context available.`
+    "I've analyzed your question and found some relevant information. Would you like me to elaborate on any specific aspect?",
+    "That's a great question! Based on the available information, I can help you explore this further.",
+    "I can help you with that. Let me know if you need more specific details.",
+    "According to my analysis, there are several dimensions to explore here. What would you like to know more about?"
   ];
 
   return responses[Math.floor(Math.random() * responses.length)];

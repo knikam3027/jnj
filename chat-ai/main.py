@@ -1,6 +1,7 @@
 import os
 import json
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import re
 import logging
@@ -12,7 +13,7 @@ import requests
 from langchain.chat_models import init_chat_model
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 
 os.environ["CURL_CA_BUNDLE"] = ""
 
@@ -197,10 +198,10 @@ def response_generator(query):
                         dialect=db.dialect,
                         top_k=5,
                     )
-    agent = create_agent(
+    agent = create_react_agent(
                             model,
                             tools,
-                            system_prompt=system_prompt,
+                            prompt=system_prompt,
                         )
     for step in agent.stream({"messages": [{"role": "user", "content": query}]},stream_mode="values",):
         resp.append(step["messages"][-1])
@@ -565,7 +566,7 @@ async def query_orchestrator(query, chat_history):
             % (time.time() - start_time)
         )
         logger.info(
-            f"User ID : {query.parameters['UserID']}: Guardrail Output: {clensed_query}"
+            f"User ID : {query.parameters.get('UserID', 'unknown')}: Guardrail Output: {clensed_query}"
         )
         print("**************************Guardrail Output Start***************************")
         print(clensed_query.strip().lower())
@@ -592,7 +593,7 @@ async def query_orchestrator(query, chat_history):
             except Exception as e:
                 raise Exception("1002 - Error in Query Rephraser " + str(e))
             logger.info("--- Execution time for Query rephraser - %s seconds ---" % (time.time() - start_time))
-            logger.info(f"User ID : {query.parameters['UserID']}: Rephrased Query: {rephrased_query}")
+            logger.info(f"User ID : {query.parameters.get('UserID', 'unknown')}: Rephrased Query: {rephrased_query}")
 
             # Clean the rephrased query
             rephrased_query = re.sub(r'<stop>|[^a-zA-Z0-9\s]', '', rephrased_query)
@@ -686,12 +687,12 @@ async def query_orchestrator(query, chat_history):
     except Exception as e:
         print("Exception Occured -", e)
         logger.error(
-            f"1011 - User ID : {query.parameters['UserID']}: Exception Occured: {e}"
+            f"1011 - User ID : {query.parameters.get('UserID', 'unknown')}: Exception Occured: {e}"
         )
         return {
             "statusCode": 400,
             "headers": {"Access-Control-Allow-Origin": "*"},
-            "body": "I am sorry, I may not be able to answer at this time.",
+            "body": f"Error Occurred: {str(e)}",
             "metadata": []
         }
 
@@ -701,6 +702,15 @@ app = FastAPI(
     title="CS LATAM AI Innvotion",
     description="CS LATAM AI Innvotion",
     version="1.0.0",
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -744,21 +754,28 @@ async def predict_item(item: RAGModel):
         # print(result)
         if type(result) == dict:
             logger.info(
-                f"User ID : {item.parameters['UserID']}:Request ID: {item.parameters['request_id']}: Response: {str(result['body'])}"
+                f"User ID : {item.parameters.get('UserID', 'unknown')}:Request ID: {item.parameters.get('request_id', 'unknown')}: Response: {str(result['body'])}"
             )
         else:
             logger.info(
-                f"User ID : {item.parameters['UserID']}: Request ID: {item.parameters['request_id']}: Response: {str(result)}"
+                f"User ID : {item.parameters.get('UserID', 'unknown')}: Request ID: {item.parameters.get('request_id', 'unknown')}: Response: {str(result)}"
             )
         logger.info("--- Request End - %s seconds ---" % (time.time() - start_time))
         logger.info("Item")
         logger.info(item)
         return result
     except Exception as e:
-        logger.error(
-            f"1007 - User ID : {item.parameters['UserID']}: Exception Occured: {e}"
-        )
-        print(e)
+        error_msg = f"1007 - User ID : {item.parameters.get('UserID', 'unknown')}: Exception Occured: {e}"
+        logger.error(error_msg)
+        print(error_msg)
+        import traceback
+        traceback.print_exc()
+        return {
+            "statusCode": 500,
+            "headers": {"Access-Control-Allow-Origin": "*"},
+            "body": f"Error: {str(e)}",
+            "metadata": []
+        }
 
 
 # @app.get(

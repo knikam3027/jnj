@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewChecked, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewChecked, OnChanges, SimpleChanges, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Message } from '@core/models/chat.model';
@@ -19,6 +19,8 @@ export class ChatMessagesComponent implements AfterViewChecked, OnChanges {
   @Output() editMessage = new EventEmitter<{id: number, content: string}>();
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
+  private cdr = inject(ChangeDetectorRef);
+
   editingMessageId: number | null = null;
   editedContent: string = '';
   displayedMessages: Map<number, string> = new Map();
@@ -31,18 +33,26 @@ export class ChatMessagesComponent implements AfterViewChecked, OnChanges {
     if (changes['messages'] && this.messages) {
       const currentCount = this.messages.length;
       
+      console.log('🔶 ngOnChanges called, message count:', currentCount);
+      console.log('🔶 Messages array:', this.messages);
+      
       // If this is initial load or session change (replacing all messages)
       if (this.isInitialLoad || currentCount < this.previousMessageCount) {
+        console.log('🔶 Initial load or session change - showing all messages immediately');
         // Show all messages immediately without typing effect
         this.messages.forEach(message => {
+          console.log('🔶 Setting message content:', message.id, message.content);
           this.displayedMessages.set(message.id, message.content);
         });
         this.isInitialLoad = false;
         this.shouldScrollToBottom = true;
       } else {
+        console.log('🔶 Processing new messages from index:', this.previousMessageCount);
         // Only apply typing effect to newly added messages
         this.messages.slice(this.previousMessageCount).forEach(message => {
+          console.log('🔶 New message:', message);
           if (message.sender === 'bot' && !this.displayedMessages.has(message.id)) {
+            console.log('🔶 Starting typing effect for bot message, content:', message.content);
             this.shouldScrollToBottom = true;
             this.startTypingEffect(message);
           } else if (message.sender === 'user' && !this.displayedMessages.has(message.id)) {
@@ -76,18 +86,27 @@ export class ChatMessagesComponent implements AfterViewChecked, OnChanges {
     }
 
     const fullText = message.content;
+    console.log(`🔶 starting typing for MsgId: ${message.id}, length: ${fullText.length}`);
+    if (!fullText) {
+      this.displayedMessages.set(message.id, fullText);
+      return;
+    }
+
     let currentIndex = 0;
     this.displayedMessages.set(message.id, '');
+    this.cdr.detectChanges();
 
     const interval = setInterval(() => {
       if (currentIndex < fullText.length) {
         this.displayedMessages.set(message.id, fullText.substring(0, currentIndex + 1));
         currentIndex++;
         this.shouldScrollToBottom = true;
+        this.cdr.detectChanges();
       } else {
         clearInterval(interval);
         this.typingIntervals.delete(message.id);
         this.shouldScrollToBottom = false;
+        this.cdr.detectChanges();
       }
     }, 20); // Typing speed: 20ms per character
 
@@ -95,7 +114,8 @@ export class ChatMessagesComponent implements AfterViewChecked, OnChanges {
   }
 
   getDisplayedContent(message: Message): string {
-    return this.displayedMessages.get(message.id) || message.content;
+    const displayed = this.displayedMessages.get(message.id);
+    return displayed !== undefined ? displayed : message.content;
   }
 
   private scrollToBottom(): void {

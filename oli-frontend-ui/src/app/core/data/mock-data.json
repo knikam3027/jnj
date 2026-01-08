@@ -12,6 +12,14 @@
       "name": "Test User",
       "avatar": ""
     }
+    ,
+    {
+      "id": "3",
+      "email": "john@jnj.com",
+      "name": "John Dev",
+      "avatar": "",
+      "password": "Jnhn@123"
+    }
   ],
   "chatSessions": [
     {
