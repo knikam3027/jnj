@@ -512,8 +512,8 @@ async def handle_query(request: RAGModel):
     """
     Endpoint to process a natural language query using the multi-agent system.
     """
-    # Get user_id from parameters, fallback to request_id if not provided
-    user_id = request.parameters.get("user_id", request.parameters.get("request_id", "default_user"))
+    # Get UserID from parameters, fallback to request_id if not provided
+    user_id = request.parameters.get("UserID", request.parameters.get("request_id", "default_user"))
     request_id = request.parameters.get("request_id", "default_request")
     
     # Configuration is required for the checkpointer to identify the unique conversation thread

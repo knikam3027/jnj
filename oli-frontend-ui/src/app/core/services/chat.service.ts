@@ -128,7 +128,7 @@ export class ChatService {
         inputs: request.message,
         parameters: {
           request_id: requestId,
-          user_id: userId,
+          UserID: userId,
           Conversation_History: true,
           chat_history: chatHistoryForPython
         }
