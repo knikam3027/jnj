@@ -27,8 +27,29 @@ from sqlalchemy.orm import sessionmaker, Session
 
 os.environ["CURL_CA_BUNDLE"] = ""
 
+# Load configuration
 config = configparser.ConfigParser()
-config.read("configs/config.ini")
+config_path = os.path.join(os.path.dirname(__file__), "configs/config.ini")
+
+if not os.path.exists(config_path):
+    raise FileNotFoundError(
+        f"\n\n" + "="*60 + "\n" +
+        "ERROR: config.ini not found!\n" +
+        "="*60 + "\n" +
+        f"Expected path: {config_path}\n\n" +
+        "Please create the config file by copying the example:\n" +
+        "  1. Copy 'configs/config.ini.example' to 'configs/config.ini'\n" +
+        "  2. Update the API keys with your actual values\n" +
+        "="*60 + "\n"
+    )
+
+config.read(config_path)
+
+# Validate required keys exist
+required_keys = ["azure_api_key", "azure_llm_gpt4_url", "azure_openai_api_version", "azure_openai_deployment_name"]
+for key in required_keys:
+    if key not in config["DEFAULT"]:
+        raise KeyError(f"Missing required config key: '{key}' in config.ini")
 
 os.environ["AZURE_OPENAI_API_KEY"] = config["DEFAULT"]["azure_api_key"]
 os.environ["AZURE_OPENAI_ENDPOINT"] = config["DEFAULT"]["azure_llm_gpt4_url"]
