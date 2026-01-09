@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+env/
+
+# Config with secrets
+configs/config.ini
+config.ini
+
+# Logs
+*.log
+app_logs/
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+*.bak
+*.tmp

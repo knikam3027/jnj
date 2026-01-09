@@ -454,10 +454,10 @@ def sql_query_workflow(user_input, *, chat_history):
                 }
 
     # Rephrase the query with history
-    # We pass the full history stored in 'previous' to provide context to the rephraser
+    # We pass the full history stored in 'chat_history' to provide context to the rephraser
     rephrased_query = query_rephraser_agent(
-        current_query=user_input.inputs,
-        previous=chat_history # 'previous' holds the list of past messages
+        query=user_input.inputs,
+        msg_history=chat_history # 'chat_history' holds the list of past messages
     )
 
     # Generate the final response using the SQL agent
@@ -491,12 +491,20 @@ async def handle_query(request: RAGModel):
     """
     Endpoint to process a natural language query using the multi-agent system.
     """
+    # Get user_id from parameters, fallback to request_id if not provided
+    user_id = request.parameters.get("user_id", request.parameters.get("request_id", "default_user"))
+    request_id = request.parameters.get("request_id", "default_request")
+    
     # Configuration is required for the checkpointer to identify the unique conversation thread
-    config: RunnableConfig = {"configurable": {"thread_id": request.parameters["request_id"]}}
+    # Use user_id combined with request_id for thread identification
+    config: RunnableConfig = {"configurable": {"thread_id": f"{user_id}_{request_id}"}}
+    
+    # Extract chat_history from parameters
+    incoming_chat_history = request.parameters.get("chat_history", [])
 
     try:
-        # Invoke the functional workflow
-        final_response = app_workflow.invoke(request, config=config)
+        # Invoke the functional workflow with chat_history
+        final_response = app_workflow.invoke(request, config=config, chat_history=incoming_chat_history)
         return final_response
     except Exception as e:
         print(f"Error during workflow invocation: {e}")

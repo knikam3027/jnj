@@ -1,0 +1,8 @@
+[DEFAULT]
+azure_llm_gpt4_url=https://your-endpoint.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-03-15-preview
+azure_api_key = your-api-key-here
+azure_embedding_api_key = your-embedding-api-key-here
+azure_embedding_url = https://your-endpoint.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-03-15-preview
+azure_deployment_embeddings = text-embedding-ada-002
+azure_openai_api_version = 2023-03-15-preview
+azure_openai_deployment_name = gpt-4

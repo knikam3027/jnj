@@ -60,6 +60,8 @@ Thumbs.db
 *.pem
 *.key
 secrets/
+config.ini
+configs/config.ini
 
 # =========================
 # Logs

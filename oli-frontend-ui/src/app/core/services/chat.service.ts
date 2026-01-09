@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, of, delay, map, catchError, throwError } from 'rxjs';
 import { environment } from '@environments/environment';
 import { ChatSession, ChatRequest, ChatResponse, Message } from '../models/chat.model';
+import { AuthService } from './auth.service';
 import mockData from '../data/mock-data.json';
 
 @Injectable({
@@ -10,6 +11,7 @@ import mockData from '../data/mock-data.json';
 })
 export class ChatService {
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
   
   private chatSessionsSubject = new BehaviorSubject<ChatSession[]>([]);
   public chatSessions$ = this.chatSessionsSubject.asObservable();
@@ -113,12 +115,22 @@ export class ChatService {
     if (environment.aiProvider === 'python') {
       const current = this.currentSessionSubject.value;
       const requestId = request.sessionId || Date.now();
+      const currentUser = this.authService.currentUser;
+      const userId = currentUser ? currentUser.id : 'anonymous';
+      
+      // Convert messages to format expected by Python backend
+      const chatHistoryForPython = current ? current.messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      })) : [];
+      
       const payload = {
         inputs: request.message,
         parameters: {
           request_id: requestId,
+          user_id: userId,
           Conversation_History: true,
-          chat_history: current ? current.messages : []
+          chat_history: chatHistoryForPython
         }
       };
 
